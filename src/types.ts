@@ -1,7 +1,7 @@
 import type { Meta } from "./steps/ValidationStep/types"
 import type { DeepReadonly } from "ts-essentials"
 import type { TranslationsRSIProps } from "./translationsRSIProps"
-import type { Columns } from "./steps/MatchColumnsStep/MatchColumnsStep"
+import type { Columns, Column } from "./steps/MatchColumnsStep/MatchColumnsStep"
 import type { StepState } from "./steps/UploadFlow"
 
 export type RsiProps<T extends string> = {
@@ -11,6 +11,8 @@ export type RsiProps<T extends string> = {
   onClose: () => void
   // Field description for requested data
   fields: Fields<T>
+  // Field that can be created by user from any column key
+  customFieldsHook?: (column: Column<string>) => Field<string>[]
   // Runs after file upload step, receives and returns raw sheet data
   uploadStepHook?: (data: RawData[]) => Promise<RawData[]>
   // Runs after header selection step, receives and returns raw sheet data
@@ -59,6 +61,8 @@ export type Fields<T extends string> = DeepReadonly<Field<T>[]>
 export type Field<T extends string> = {
   // UI-facing field label
   label: string
+  // UI-facing label for dropdown option
+  dropDownLabel?: string
   // Field's unique identifier
   key: T
   // UI-facing additional information displayed via tooltip and ? icon

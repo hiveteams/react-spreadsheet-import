@@ -1,10 +1,19 @@
 import type { Columns } from "../MatchColumnsStep"
 import { ColumnType } from "../MatchColumnsStep"
-import type { Data, Fields, RawData } from "../../../types"
+import type { Data, Field, Fields, RawData } from "../../../types"
 import { normalizeCheckboxValue } from "./normalizeCheckboxValue"
 
-export const normalizeTableData = <T extends string>(columns: Columns<T>, data: RawData[], fields: Fields<T>) =>
-  data.map((row) =>
+export const normalizeTableData = <T extends string>(
+  columns: Columns<T>,
+  data: RawData[],
+  originalFields: Fields<T>,
+) => {
+  const additionalFields = columns
+    // columns with custom fields
+    .map((c) => "customField" in c && c.customField)
+    .filter(Boolean) as Field<T>[]
+  const fields = [...originalFields, ...additionalFields]
+  return data.map((row) =>
     columns.reduce((acc, column, index) => {
       const curr = row[index]
       switch (column.type) {
@@ -40,3 +49,4 @@ export const normalizeTableData = <T extends string>(columns: Columns<T>, data: 
       }
     }, {} as Data<T>),
   )
+}

@@ -8,7 +8,7 @@ import { setColumn } from "./utils/setColumn"
 import { setIgnoreColumn } from "./utils/setIgnoreColumn"
 import { setSubColumn } from "./utils/setSubColumn"
 import { normalizeTableData } from "./utils/normalizeTableData"
-import type { Field, RawData } from "../../types"
+import type { Fields, Field, RawData } from "../../types"
 import { getMatchedColumns } from "./utils/getMatchedColumns"
 import { UnmatchedFieldsAlert } from "../../components/Alerts/UnmatchedFieldsAlert"
 import { findUnmatchedRequiredFields } from "./utils/findUnmatchedRequiredFields"
@@ -36,14 +36,27 @@ export type MatchedOptions<T> = {
 
 type EmptyColumn = { type: ColumnType.empty; index: number; header: string }
 type IgnoredColumn = { type: ColumnType.ignored; index: number; header: string }
-type MatchedColumn<T> = { type: ColumnType.matched; index: number; header: string; value: T }
-type MatchedSwitchColumn<T> = { type: ColumnType.matchedCheckbox; index: number; header: string; value: T }
+type MatchedColumn<T> = {
+  type: ColumnType.matched
+  index: number
+  header: string
+  value: T
+  customField?: Field<string>
+}
+type MatchedSwitchColumn<T> = {
+  type: ColumnType.matchedCheckbox
+  index: number
+  header: string
+  value: T
+  customField?: Field<string>
+}
 export type MatchedSelectColumn<T> = {
   type: ColumnType.matchedSelect
   index: number
   header: string
   value: T
   matchedOptions: Partial<MatchedOptions<T>>[]
+  customField?: Field<string>
 }
 export type MatchedSelectOptionsColumn<T> = {
   type: ColumnType.matchedSelectOptions
@@ -51,6 +64,7 @@ export type MatchedSelectOptionsColumn<T> = {
   header: string
   value: T
   matchedOptions: MatchedOptions<T>[]
+  customField?: Field<string>
 }
 
 export type Column<T extends string> =
@@ -71,7 +85,7 @@ export const MatchColumnsStep = <T extends string>({
 }: MatchColumnsProps<T>) => {
   const toast = useToast()
   const dataExample = data.slice(0, 2)
-  const { fields, autoMapHeaders, autoMapDistance, translations } = useRsi<T>()
+  const { fields, autoMapHeaders, autoMapDistance, translations, customFieldsHook } = useRsi<T>()
   const [isLoading, setIsLoading] = useState(false)
   const [columns, setColumns] = useState<Columns<T>>(
     // Do not remove spread, it indexes empty array elements, otherwise map() skips over them
@@ -80,14 +94,13 @@ export const MatchColumnsStep = <T extends string>({
   const [showUnmatchedFieldsAlert, setShowUnmatchedFieldsAlert] = useState(false)
 
   const onChange = useCallback(
-    (value: T, columnIndex: number) => {
-      const field = fields.find((field) => field.key === value) as unknown as Field<T>
-      const existingFieldIndex = columns.findIndex((column) => "value" in column && column.value === field.key)
+    (value: T, columnIndex: number, customField?: Field<T>) => {
+      const field = customField || (fields.find((field) => field.key === value) as unknown as Field<T>)
+      const existingFieldIndex = columns.findIndex((column) => "value" in column && column.value === field?.key)
       setColumns(
         columns.map<Column<T>>((column, index) => {
-          columnIndex === index ? setColumn(column, field, data) : column
           if (columnIndex === index) {
-            return setColumn(column, field, data)
+            return setColumn(column, field, data, !!customField)
           } else if (index === existingFieldIndex) {
             toast({
               status: "warning",
@@ -159,7 +172,9 @@ export const MatchColumnsStep = <T extends string>({
 
   useEffect(() => {
     if (autoMapHeaders) {
-      setColumns(getMatchedColumns(columns, fields, data, autoMapDistance))
+      const customFields = customFieldsHook ? columns.map(customFieldsHook).flat() : []
+      const allFields = [...fields, ...customFields] as Fields<T>
+      setColumns(getMatchedColumns(columns, allFields, data, autoMapDistance))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

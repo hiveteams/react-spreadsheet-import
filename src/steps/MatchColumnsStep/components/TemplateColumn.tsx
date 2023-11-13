@@ -13,7 +13,7 @@ import { useRsi } from "../../../hooks/useRsi"
 import type { Column } from "../MatchColumnsStep"
 import { ColumnType } from "../MatchColumnsStep"
 import { MatchIcon } from "./MatchIcon"
-import type { Fields } from "../../../types"
+import type { Field, Fields } from "../../../types"
 import type { Translations } from "../../../translationsRSIProps"
 import { MatchColumnSelect } from "../../../components/Selects/MatchColumnSelect"
 import { SubMatchingSelect } from "./SubMatchingSelect"
@@ -27,21 +27,27 @@ const getAccordionTitle = <T extends string>(fields: Fields<T>, column: Column<T
 }
 
 type TemplateColumnProps<T extends string> = {
-  onChange: (val: T, index: number) => void
+  onChange: (val: T, index: number, customField?: Field<T>) => void
   onSubChange: (val: T, index: number, option: string) => void
   column: Column<T>
 }
 
 export const TemplateColumn = <T extends string>({ column, onChange, onSubChange }: TemplateColumnProps<T>) => {
-  const { translations, fields } = useRsi<T>()
+  const { translations, fields, customFieldsHook } = useRsi<T>()
   const styles = useStyleConfig("MatchColumnsStep") as Styles
+  const isCustom = "customField" in column
   const isIgnored = column.type === ColumnType.ignored
   const isChecked =
     column.type === ColumnType.matched ||
     column.type === ColumnType.matchedCheckbox ||
     column.type === ColumnType.matchedSelectOptions
   const isSelect = "matchedOptions" in column
-  const selectOptions = fields.map(({ label, key }) => ({ value: key, label }))
+
+  const customFields = customFieldsHook ? customFieldsHook(column) : []
+  const selectOptions = [...fields, ...customFields].map(({ key, label, dropDownLabel }) => ({
+    value: key,
+    label: dropDownLabel ?? label,
+  }))
   const selectValue = selectOptions.find(({ value }) => "value" in column && column.value === value)
 
   return (
@@ -55,12 +61,18 @@ export const TemplateColumn = <T extends string>({ column, onChange, onSubChange
               <MatchColumnSelect
                 placeholder={translations.matchColumnsStep.selectPlaceholder}
                 value={selectValue}
-                onChange={(value) => onChange(value?.value as T, column.index)}
+                onChange={(value) =>
+                  onChange(
+                    value?.value as T,
+                    column.index,
+                    customFields.find((e) => e.key === value?.value) as Field<T> | undefined,
+                  )
+                }
                 options={selectOptions}
                 name={column.header}
               />
             </Box>
-            <MatchIcon isChecked={isChecked} />
+            <MatchIcon isChecked={isChecked} isCustom={isCustom} />
           </Flex>
           {isSelect && (
             <Flex width="100%">

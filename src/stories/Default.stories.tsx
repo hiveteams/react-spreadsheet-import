@@ -24,6 +24,25 @@ export const Basic = () => {
       </Link>
       <ReactSpreadsheetImport
         {...mockRsiValues}
+        customFieldsHook={(c) => [
+          {
+            dropDownLabel: `1Label for dropdown (${c.header})`,
+            key: `1Key for result csv (${c.header})`,
+            label: `1Label for validation step (${c.header})`,
+            fieldType: {
+              type: "input",
+            },
+          },
+          {
+            dropDownLabel: `2Label for dropdown (${c.header})`,
+            key: `2Key for result csv (${c.header})`,
+            label: `2Label for validation step (${c.header})`,
+            fieldType: {
+              type: "checkbox",
+            },
+            alternateMatches: c.index === 1 ? [c.header] : undefined,
+          },
+        ]}
         isOpen={isOpen}
         onClose={onClose}
         onSubmit={setData}
