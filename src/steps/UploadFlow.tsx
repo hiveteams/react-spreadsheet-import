@@ -44,12 +44,13 @@ export type StepState =
     }
 
 interface Props {
-  nextStep: () => void
+  state: StepState
+  onNext: (v: StepState) => void
+  onBack?: () => void
 }
 
-export const UploadFlow = ({ nextStep }: Props) => {
+export const UploadFlow = ({ state, onNext, onBack }: Props) => {
   const {
-    initialStepState,
     maxRecords,
     translations,
     uploadStepHook,
@@ -59,7 +60,6 @@ export const UploadFlow = ({ nextStep }: Props) => {
     rowHook,
     tableHook,
   } = useRsi()
-  const [state, setState] = useState<StepState>(initialStepState || { type: StepType.upload })
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const toast = useToast()
   const errorToast = useCallback(
@@ -90,16 +90,15 @@ export const UploadFlow = ({ nextStep }: Props) => {
               }
               try {
                 const mappedWorkbook = await uploadStepHook(mapWorkbook(workbook))
-                setState({
+                onNext({
                   type: StepType.selectHeader,
                   data: mappedWorkbook,
                 })
-                nextStep()
               } catch (e) {
                 errorToast((e as Error).message)
               }
             } else {
-              setState({ type: StepType.selectSheet, workbook })
+              onNext({ type: StepType.selectSheet, workbook })
             }
           }}
         />
@@ -115,15 +114,15 @@ export const UploadFlow = ({ nextStep }: Props) => {
             }
             try {
               const mappedWorkbook = await uploadStepHook(mapWorkbook(state.workbook, sheetName))
-              setState({
+              onNext({
                 type: StepType.selectHeader,
                 data: mappedWorkbook,
               })
-              nextStep()
             } catch (e) {
               errorToast((e as Error).message)
             }
           }}
+          onBack={onBack}
         />
       )
     case StepType.selectHeader:
@@ -133,16 +132,16 @@ export const UploadFlow = ({ nextStep }: Props) => {
           onContinue={async (...args) => {
             try {
               const { data, headerValues } = await selectHeaderStepHook(...args)
-              setState({
+              onNext({
                 type: StepType.matchColumns,
                 data,
                 headerValues,
               })
-              nextStep()
             } catch (e) {
               errorToast((e as Error).message)
             }
           }}
+          onBack={onBack}
         />
       )
     case StepType.matchColumns:
@@ -154,16 +153,16 @@ export const UploadFlow = ({ nextStep }: Props) => {
             try {
               const data = await matchColumnsStepHook(values, rawData, columns)
               const dataWithMeta = await addErrorsAndRunHooks(data, fields, rowHook, tableHook)
-              setState({
+              onNext({
                 type: StepType.validateData,
                 data: dataWithMeta,
                 fields,
               })
-              nextStep()
             } catch (e) {
               errorToast((e as Error).message)
             }
           }}
+          onBack={onBack}
         />
       )
     case StepType.validateData:
@@ -172,6 +171,7 @@ export const UploadFlow = ({ nextStep }: Props) => {
           initialData={state.data}
           file={uploadedFile!}
           fields={(state.fields || fields) as Fields<string>}
+          onBack={onBack}
         />
       )
     default:

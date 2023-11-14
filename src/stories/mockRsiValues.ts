@@ -96,7 +96,11 @@ export const mockRsiValues = mockComponentBehaviourForTypes({
     return [
       {
         dropDownLabel: `(+)CF boolean`,
-        key: `${c.header} - key boolean`,
+        // user can convert csv unknown header into acceptable for backend header
+        // for example: (original)"MyFancyHeader" -> (result csv)"CF:boolean:MyFancyHeader"
+        // as result backend can understand that this is custom field with unknown key
+        // so it should be stored in custom fields collection
+        key: `CF:boolean:${c.header}`,
         label: `${c.header} - label`,
         fieldType: {
           type: "checkbox",

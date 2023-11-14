@@ -15,9 +15,10 @@ type Props<T extends string> = {
   fields?: Fields<T>
   initialData: (Data<T> & Meta)[]
   file: File
+  onBack?: () => void
 }
 
-export const ValidationStep = <T extends string>({ initialData, file, fields: mergedFields }: Props<T>) => {
+export const ValidationStep = <T extends string>({ initialData, file, fields: mergedFields, onBack }: Props<T>) => {
   const { translations, onClose, onSubmit, rowHook, tableHook, fields: originalFields } = useRsi<T>()
   // override original fields with fields from props
   const fields = mergedFields ?? originalFields
@@ -154,7 +155,12 @@ export const ValidationStep = <T extends string>({ initialData, file, fields: me
           }}
         />
       </ModalBody>
-      <ContinueButton onContinue={onContinue} title={translations.validationStep.nextButtonTitle} />
+      <ContinueButton
+        onContinue={onContinue}
+        onBack={onBack}
+        title={translations.validationStep.nextButtonTitle}
+        backTitle={translations.validationStep.backButtonTitle}
+      />
     </>
   )
 }
