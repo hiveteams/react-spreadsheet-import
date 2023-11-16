@@ -15,14 +15,15 @@ export const mergeCustomFields = <T extends string>(
   fields: Fields<T>,
   headerCustomFieldsMap: HeaderCustomFieldsMap,
 ) => {
-  const mergedFields = [...fields] as Field<string>[]
+  const customFields: Field<T>[] = []
   for (const column of columns) {
     if (!("value" in column)) continue
-    const customField = headerCustomFieldsMap[column.header as string]?.find((field) => field.key === column.value)
+    const columnCustomField = selectColumnCustomFields(column, headerCustomFieldsMap)
+    const customField = columnCustomField.find((field) => field.key === column.value)
     if (!customField) continue
-    mergedFields.splice(column.index, 0, customField)
+    customFields.push(customField as Field<T>)
   }
-  return mergedFields as unknown as Fields<T>
+  return [...fields, ...customFields]
 }
 
 export const selectColumnCustomFields = (column: Column<string>, headerCustomFieldsMap: HeaderCustomFieldsMap) => {
