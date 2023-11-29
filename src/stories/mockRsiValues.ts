@@ -92,6 +92,32 @@ export const mockRsiValues = mockComponentBehaviourForTypes({
   },
   isOpen: true,
   onClose: () => {},
+  customFieldsHook: (c) => {
+    return [
+      {
+        dropDownLabel: `(+)CF boolean`,
+        // user can convert csv unknown header into acceptable for backend header
+        // for example: (original)"MyFancyHeader" -> (result csv)"CF:boolean:MyFancyHeader"
+        // as result backend can understand that this is custom field with unknown key
+        // so it should be stored in custom fields collection
+        key: `CF:boolean:${c.header}`,
+        label: `${c.header} - label`,
+        fieldType: {
+          type: "checkbox",
+        },
+      },
+      {
+        dropDownLabel: `(+)CF string`,
+        key: `${c.header} - key string`,
+        label: `${c.header} - label`,
+        fieldType: {
+          type: "input",
+        },
+        // ability to automatically map custom fields
+        alternateMatches: c.header.includes("custom") ? [c.header] : undefined,
+      },
+    ]
+  },
   // uploadStepHook: async (data) => {
   //   await new Promise((resolve) => {
   //     setTimeout(() => resolve(data), 4000)
